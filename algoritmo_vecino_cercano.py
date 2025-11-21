@@ -47,7 +47,11 @@ class TSPVecinoMasCercano:
 
         # Convertir nombre a índice si es necesario
         if isinstance(ciudad_inicio, str):
-            ciudad_inicio = self.ciudades.index(ciudad_inicio)
+            try:
+                ciudad_inicio = self.ciudades.index(ciudad_inicio)
+            except ValueError:
+                print(f"[ERROR] La ciudad de inicio '{ciudad_inicio}' no se encuentra en el diccionario de ciudades.")
+                return None
         
         if verbose:
             print("="*70)
@@ -180,15 +184,21 @@ class TSPVecinoMasCercano:
             print(f"{'─'*70}")
             
             resultado = self.resolver(ciudad_inicio=idx_inicio, verbose=verbose)
-            todos_resultados.append(resultado)
             
-            print(f"  Longitud obtenida: {resultado['longitud']:.2f} km")
-            
-            if resultado['longitud'] < mejor_longitud:
-                mejor_longitud = resultado['longitud']
-                mejor_resultado = resultado
-                print(f" NUEVA MEJOR SOLUCIÓN")
+            # Solo si la resolución fue exitosa
+            if resultado:
+                todos_resultados.append(resultado)
+                print(f"  Longitud obtenida: {resultado['longitud']:.2f} km")
+                
+                if resultado['longitud'] < mejor_longitud:
+                    mejor_longitud = resultado['longitud']
+                    mejor_resultado = resultado
+                    print(f" NUEVA MEJOR SOLUCIÓN")
         
+        if not mejor_resultado:
+            print("\n[ERROR] No se pudo resolver para ninguna ciudad de inicio.")
+            return {'mejor': None, 'todos_intentos': []}
+            
         print("\n" + "="*70)
         print("RESULTADO MULTI-INICIO")
         print("="*70)
@@ -197,7 +207,7 @@ class TSPVecinoMasCercano:
         print(f"Longitudes encontradas:")
         for i, res in enumerate(todos_resultados):
             marcador = "<<<" if res['longitud'] == mejor_longitud else ""
-            print(f"  Desde {self.ciudades[i]:20s}: {res['longitud']:8.2f} km {marcador}")
+            print(f"  Desde {self.ciudades[res['ciudad_inicio']]:20s}: {res['longitud']:8.2f} km {marcador}")
         print("="*70)
         
         return {
@@ -206,6 +216,7 @@ class TSPVecinoMasCercano:
         }
     
     def visualizar_solucion(self, resultado, ruta_guardado='solucion_heuristica.png'):
+        if not resultado: return
         tour = resultado['tour']
         
         fig, ax = plt.subplots(figsize=(14, 10))
@@ -272,6 +283,9 @@ class TSPVecinoMasCercano:
         plt.show()
     
     def animar_construccion(self, resultado, ruta_guardado='animacion_construccion.gif'):
+        if not resultado: 
+            print("No se pudo resolver el TSP, no se genera animación.")
+            return
 
         pasos = resultado['pasos']
         decisiones = resultado['decisiones']
@@ -458,16 +472,15 @@ class TSPVecinoMasCercano:
 
 if __name__ == "__main__":
     
-    # PASO 1: Definir el conjunto de ciudades
+    # PASO 1: Definir el conjunto de ciudades (CON COORDENADAS REALES)
     ciudades = {
-        'Nairobi': (-33.4489, -70.6693),
-        'OSorno': (-33.0472, -71.6127),
-        'RAncagua': (-36.8201, -73.0444),
-        'RAncagua': (-29.9027, -71.2519),
-        'PAmplona': (-38.7359, -72.5904),
-        'Moscu': (-41.4693, -72.9424),
-        'Orlando': (-23.6509, -70.3975),
-        'San JOSE': (0,0)
+        'Nairobi': (-1.2833, 36.8167), # Kenia
+        'Osorno': (-40.5739, -73.1360), # Chile
+        'Rancagua': (-34.1667, -70.7333), # Chile
+        'Pamplona': (42.8167, -1.6500), # España
+        'Moscu': (55.7517, 37.6178), # Rusia
+        'Orlando': (28.5383, -81.3792), # EE. UU.
+        'San Jose': (37.3361, -121.8906) # San José, California, EE. UU.
     }
     
     # PASO 2: Crear instancia del resolvedor heurístico
@@ -480,29 +493,33 @@ if __name__ == "__main__":
     print("\n" + "="*70)
     print("EJECUCIÓN: Heurística desde ciudad específica")
     print("="*70)
-    resultado = resolvedor.resolver(ciudad_inicio='Santiago', verbose=True)
+    # COORRECCIÓN: Usar una ciudad que esté en el diccionario
+    resultado = resolvedor.resolver(ciudad_inicio='Nairobi', verbose=True)
     
-    # PASO 5: Visualizar la solución heurística
-    resolvedor.visualizar_solucion(resultado, ruta_guardado='solucion_heuristica.png')
+    # Se debe verificar que se obtuvo un resultado antes de intentar visualizar
+    if resultado:
+        # PASO 5: Visualizar la solución heurística
+        resolvedor.visualizar_solucion(resultado, ruta_guardado='solucion_heuristica.png')
+        
+        # PASO 6: Crear animación del proceso constructivo
+        resolvedor.animar_construccion(resultado, ruta_guardado='construccion_greedy.gif')
     
-    # PASO 6: Crear animación del proceso constructivo
-    resolvedor.animar_construccion(resultado, ruta_guardado='construccion_greedy.gif')
+        # PASO 7 (OPCIONAL): Probar multi-inicio para mejor solución
+        print("\n\n" + "="*70)
+        print("EJECUCIÓN MEJORADA: Multi-inicio")
+        print("="*70)
+        resultado_multi = resolvedor.resolver_multi_inicio(verbose=False)
+        
+        # Visualizar la mejor solución encontrada
+        if resultado_multi['mejor']:
+            resolvedor.visualizar_solucion(resultado_multi['mejor'], 
+                                        ruta_guardado='mejor_solucion_heuristica.png')
     
-    # PASO 7 (OPCIONAL): Probar multi-inicio para mejor solución
-    print("\n\n" + "="*70)
-    print("EJECUCIÓN MEJORADA: Multi-inicio")
-    print("="*70)
-    resultado_multi = resolvedor.resolver_multi_inicio(verbose=False)
-    
-    # Visualizar la mejor solución encontrada
-    resolvedor.visualizar_solucion(resultado_multi['mejor'], 
-                                   ruta_guardado='mejor_solucion_heuristica.png')
-    
-    print("\n" + "="*70)
-    print(" HEURÍSTICA CONSTRUCTIVA COMPLETADA")
-    print("="*70)
-    print("Archivos generados:")
-    print("  1. solucion_heuristica.png - Solución desde ciudad específica")
-    print("  2. construccion_greedy.gif - Animación del proceso constructivo")
-    print("  3. mejor_solucion_heuristica.png - Mejor solución multi-inicio")
-    print("="*70)
+        print("\n" + "="*70)
+        print(" HEURÍSTICA CONSTRUCTIVA COMPLETADA")
+        print("="*70)
+        print("Archivos generados:")
+        print("  1. solucion_heuristica.png - Solución desde ciudad específica")
+        print("  2. construccion_greedy.gif - Animación del proceso constructivo")
+        print("  3. mejor_solucion_heuristica.png - Mejor solución multi-inicio")
+        print("="*70)
