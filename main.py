@@ -34,26 +34,41 @@ def main():
     
     # Algoritmo de búsqueda exhaustiva
     print("[3] Ejecutando búsqueda exhaustiva...")
-    inicio = time.time()
+    inicio = time.perf_counter()  # Usar perf_counter para mayor precisión
     mejor_ruta_exhaustiva, distancia_exhaustiva = busqueda_exhaustiva(matriz_distancias)
-    tiempo_exhaustiva = time.time() - inicio
+    tiempo_exhaustiva = time.perf_counter() - inicio
     print(f"    ✓ Mejor ruta: {mejor_ruta_exhaustiva}")
     print(f"    ✓ Distancia total: {distancia_exhaustiva:.2f}")
-    print(f"    ✓ Tiempo de ejecución: {tiempo_exhaustiva:.4f} segundos\n")
+    print(f"    ✓ Tiempo de ejecución: {tiempo_exhaustiva:.6f} segundos\n")
     
     # Algoritmo del vecino más cercano
     print("[4] Ejecutando algoritmo del vecino más cercano...")
-    inicio = time.time()
+    inicio = time.perf_counter()
     ruta_nn, distancia_nn = vecino_mas_cercano(matriz_distancias, ciudad_inicial=0)
-    tiempo_nn = time.time() - inicio
+    tiempo_nn = time.perf_counter() - inicio
     print(f"    ✓ Ruta encontrada: {ruta_nn}")
     print(f"    ✓ Distancia total: {distancia_nn:.2f}")
-    print(f"    ✓ Tiempo de ejecución: {tiempo_nn:.4f} segundos\n")
+    print(f"    ✓ Tiempo de ejecución: {tiempo_nn:.6f} segundos\n")
     
     # Comparación de resultados
     print("[5] Comparación de algoritmos:")
-    print(f"    Diferencia de distancia: {abs(distancia_exhaustiva - distancia_nn):.2f}")
-    print(f"    Factor de velocidad: {tiempo_exhaustiva/tiempo_nn:.2f}x más rápido (NN)\n")
+    diferencia = abs(distancia_exhaustiva - distancia_nn)
+    print(f"    Diferencia de distancia: {diferencia:.2f}")
+    
+    # Manejar división por cero cuando el tiempo es muy pequeño
+    if tiempo_nn > 0:
+        factor_velocidad = tiempo_exhaustiva / tiempo_nn
+        print(f"    Factor de velocidad: {factor_velocidad:.2f}x más rápido (NN)")
+    else:
+        print(f"    Factor de velocidad: >10000x más rápido (NN - tiempo demasiado pequeño para medir)")
+    
+    # Mostrar si ambas rutas son iguales
+    if diferencia < 0.01:  # Considerar iguales si la diferencia es muy pequeña
+        print(f"    ✓ ¡Ambos algoritmos encontraron la misma ruta óptima!")
+    else:
+        porcentaje_diferencia = (diferencia / distancia_exhaustiva) * 100
+        print(f"    Diferencia porcentual: {porcentaje_diferencia:.2f}%")
+    print()
     
     # Visualización
     print("[6] Generando visualizaciones...")
@@ -78,6 +93,10 @@ def main():
             'ruta': ruta_nn,
             'distancia': distancia_nn,
             'tiempo': tiempo_nn
+        },
+        'comparacion': {
+            'diferencia_distancia': diferencia,
+            'misma_ruta': diferencia < 0.01
         }
     }
     guardar_resultados(resultados, 'resultados/resultados.json')
