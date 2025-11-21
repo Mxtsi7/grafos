@@ -309,13 +309,14 @@ if __name__ == "__main__":
     
     # Definir ciudades (PERSONALIZA SEGÚN TU PROYECTO)
     ciudades = {
-        'Santiago': (-33.4489, -70.6693),
-        'Valparaíso': (-33.0472, -71.6127),
-        'Concepción': (-36.8201, -73.0444),
-        'La Serena': (-29.9027, -71.2519),
-        'Temuco': (-38.7359, -72.5904),
-        'Puerto Montt': (-41.4693, -72.9424),
-        'Antofagasta': (-23.6509, -70.3975)
+        'Nairobi': (-33.4489, -70.6693),
+        'OSorno': (-33.0472, -71.6127),
+        'RAncagua': (-36.8201, -73.0444),
+        'RAncagua': (-29.9027, -71.2519),
+        'PAmplona': (-38.7359, -72.5904),
+        'Moscu': (-41.4693, -72.9424),
+        'Orlando': (-23.6509, -70.3975),
+        'San JOSE': (0,0)
     }
     
     # Crear solver
