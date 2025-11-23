@@ -19,7 +19,7 @@ def visualizar_ruta(coordenadas, ruta, titulo="Ruta TSP", archivo=None):
         archivo: Ruta para guardar la imagen (None = mostrar)
     """
     fig, ax = plt.subplots(figsize=(10, 8))
-    
+        
     # Extraer coordenadas de la ruta
     ruta_completa = ruta + [ruta[0]]  # Volver al inicio
     x = [coordenadas[i][0] for i in ruta_completa]
