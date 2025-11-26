@@ -1,0 +1,31 @@
+{
+  "n_ciudades": 7,
+  "exhaustiva": {
+    "ruta": [
+      0,
+      1,
+      2,
+      6,
+      5,
+      3,
+      4
+    ],
+    "distancia": 367.8552614079819,
+    "tiempo": 0.004266400000233261
+  },
+  "vecino_cercano": {
+    "ruta": [
+      0,
+      4,
+      3,
+      5,
+      6,
+      2,
+      1
+    ],
+    "distancia": 367.8552614079819,
+    "tiempo": 5.870000040886225e-05
+  },
+  "comparacion": {
+    "diferencia_distancia": 0.0,
+    "misma_ruta": 

@@ -4,6 +4,7 @@ from itertools import permutations
 import time
 from matplotlib.animation import FuncAnimation, PillowWriter
 from math import radians, sin, cos, sqrt, atan2
+import math
 
 class TSPExhaustivo:
     
@@ -46,7 +47,7 @@ class TSPExhaustivo:
         print("BÚSQUEDA EXHAUSTIVA - MÉTODO EXACTO")
         print("="*70)
         print(f"Ciudades a visitar: {self.n}")
-        print(f"Permutaciones totales: {np.math.factorial(self.n-1):,}")
+        print(f"Permutaciones totales: {math.factorial(self.n-1):,}")
         print(f"Complejidad: O({self.n}!)")
         print("="*70)
         
@@ -309,13 +310,13 @@ if __name__ == "__main__":
     
     # Definir ciudades (PERSONALIZA SEGÚN TU PROYECTO)
     ciudades = {
-        'Santiago': (-33.4489, -70.6693),
-        'Valparaíso': (-33.0472, -71.6127),
-        'Concepción': (-36.8201, -73.0444),
-        'La Serena': (-29.9027, -71.2519),
-        'Temuco': (-38.7359, -72.5904),
-        'Puerto Montt': (-41.4693, -72.9424),
-        'Antofagasta': (-23.6509, -70.3975)
+        'Nairobi': (-1.2833, 36.8167), 
+        'Osorno': (-40.5739, -73.1360), 
+        'Rancagua': (-34.1667, -70.7333), 
+        'Pamplona': (42.8167, -1.6500), 
+        'Moscu': (55.7517, 37.6178), 
+        'Orlando': (28.5383, -81.3792), 
+        'San Jose': (37.3361, -121.8906) 
     }
     
     # Crear solver
