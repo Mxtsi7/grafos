@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from matplotlib.animation import FuncAnimation, PillowWriter
 from math import radians, sin, cos, sqrt, atan2
+from matplotlib.animation import FuncAnimation
 
 class TSPVecinoMasCercano:
     def __init__(self, datos_ciudades):
@@ -18,7 +18,7 @@ class TSPVecinoMasCercano:
         dlon = lon2 - lon1
         a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
         c = 2 * atan2(sqrt(a), sqrt(1-a))
-        R = 6371.0  # Radio de la Tierra en km
+        R = 6371.0 
         return R * c
 
     def _calcular_matriz_distancias(self):
@@ -40,98 +40,109 @@ class TSPVecinoMasCercano:
             try:
                 ciudad_inicio = self.ciudades.index(ciudad_inicio)
             except ValueError:
-                print(f"[ERROR] La ciudad de inicio '{ciudad_inicio}' no se encuentra en el diccionario.")
+                print("Ciudad no encontrada.")
                 return None
-
-        if verbose:
-            print(f"Iniciando cálculo desde: {self.ciudades[ciudad_inicio]}")
 
         tiempo_inicio = time.time()
         tour = [ciudad_inicio]
         no_visitadas = set(range(self.n))
         no_visitadas.remove(ciudad_inicio)
-        pasos = [tour.copy()]
-        decisiones = []
+        
+        pasos_animacion = [tour.copy()] # Guardamos estado inicial
+
         ciudad_actual = ciudad_inicio
-
-        numero_paso = 1
+        
         while no_visitadas:
-            distancias_a_no_visitadas = {
-                ciudad: self.matriz_distancias[ciudad_actual][ciudad]
-                for ciudad in no_visitadas
-            }
-            ciudad_mas_cercana = min(distancias_a_no_visitadas, key=distancias_a_no_visitadas.get)
-            distancia_mas_cercana = distancias_a_no_visitadas[ciudad_mas_cercana]
+            # Lógica Greedy
+            candidato = min(no_visitadas, key=lambda c: self.matriz_distancias[ciudad_actual][c])
+            
+            tour.append(candidato)
+            no_visitadas.remove(candidato)
+            ciudad_actual = candidato
+            
+            pasos_animacion.append(tour.copy()) # Guardamos paso intermedio
 
-            info_decision = {
-                'paso': numero_paso,
-                'desde': ciudad_actual,
-                'hacia': ciudad_mas_cercana,
-                'distancia': distancia_mas_cercana,
-                'opciones': distancias_a_no_visitadas.copy(),
-                'num_opciones': len(distancias_a_no_visitadas)
-            }
-            decisiones.append(info_decision)
-            tour.append(ciudad_mas_cercana)
-            pasos.append(tour.copy())
-            no_visitadas.remove(ciudad_mas_cercana)
-            ciudad_actual = ciudad_mas_cercana
-            numero_paso += 1
-
-        distancia_regreso = self.matriz_distancias[tour[-1]][tour[0]]
-        longitud_final = self._calcular_longitud_tour(tour)
         tiempo_fin = time.time()
-        tiempo_ejecucion = tiempo_fin - tiempo_inicio
-
+        
         return {
             'tour': tour,
-            'longitud': longitud_final,
-            'tiempo': tiempo_ejecucion,
-            'pasos': pasos,
-            'decisiones': decisiones,
-            'ciudad_inicio': ciudad_inicio,
-            'distancia_regreso': distancia_regreso
+            'longitud': self._calcular_longitud_tour(tour),
+            'tiempo': tiempo_fin - tiempo_inicio,
+            'pasos': pasos_animacion, # Clave para la animación
+            'ciudad_inicio': ciudad_inicio
         }
 
-    def resolver_multi_inicio(self, verbose=False):
-        mejor_resultado = None
-        mejor_longitud = float('inf')
-        todos_resultados = []
-
-        for idx_inicio in range(self.n):
-            resultado = self.resolver(ciudad_inicio=idx_inicio, verbose=verbose)
-            if resultado:
-                todos_resultados.append(resultado)
-                if resultado['longitud'] < mejor_longitud:
-                    mejor_longitud = resultado['longitud']
-                    mejor_resultado = resultado
-        
-        return {'mejor': mejor_resultado, 'todos_intentos': todos_resultados}
+    def resolver_multi_inicio(self):
+        mejor_res = None
+        mejor_len = float('inf')
+        for i in range(self.n):
+            res = self.resolver(i, verbose=False)
+            if res['longitud'] < mejor_len:
+                mejor_len = res['longitud']
+                mejor_res = res
+        return {'mejor': mejor_res}
 
     def visualizar_solucion(self, resultado, ruta_guardado='solucion_heuristica.png', mostrar=True):
         if not resultado: return
         tour = resultado['tour']
-        idx_inicio = resultado['ciudad_inicio']
+        fig, ax = plt.subplots(figsize=(10, 8))
         
-        fig, ax = plt.subplots(figsize=(14, 10))
-        ax.scatter(self.coordenadas[:, 1], self.coordenadas[:, 0], c='darkblue', s=300, zorder=5, alpha=0.9, edgecolors='black')
-        ax.scatter(self.coordenadas[idx_inicio, 1], self.coordenadas[idx_inicio, 0], c='gold', s=500, zorder=6, marker='*', edgecolors='black', label='Inicio')
-
-        for i, ciudad in enumerate(self.ciudades):
-            ax.annotate(ciudad, (self.coordenadas[i, 1], self.coordenadas[i, 0]), xytext=(10, 10), textcoords='offset points', fontsize=11, fontweight='bold', bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.8))
-
-        tour_extendido = tour + [tour[0]]
-        coordenadas_tour = self.coordenadas[tour_extendido]
-        ax.plot(coordenadas_tour[:, 1], coordenadas_tour[:, 0], c='blue', linewidth=3, alpha=0.8, zorder=3)
-
-        ax.set_title(f'Ruta Heurística: {resultado["longitud"]:.2f} km', fontsize=14, fontweight='bold')
-        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.scatter(self.coordenadas[:, 1], self.coordenadas[:, 0], c='blue', s=100, zorder=5)
+        ax.scatter(self.coordenadas[tour[0], 1], self.coordenadas[tour[0], 0], c='gold', s=150, marker='*', zorder=6, label='Inicio')
         
-        if ruta_guardado:
-            plt.savefig(ruta_guardado, dpi=300, bbox_inches='tight')
-            print(f"Imagen guardada en: {ruta_guardado}")
+        for i, txt in enumerate(self.ciudades):
+            ax.annotate(txt, (self.coordenadas[i, 1], self.coordenadas[i, 0]), xytext=(5, 5), textcoords='offset points')
+
+        tour_ext = tour + [tour[0]]
+        coords = self.coordenadas[tour_ext]
+        ax.plot(coords[:, 1], coords[:, 0], 'b--', linewidth=2, label='Ruta Heurística')
         
-        if mostrar:
-            plt.show()
-        else:
-            plt.close() # Importante cerrar si no se muestra para liberar memoria
+        ax.set_title(f"Solución Heurística (Vecino Más Cercano): {resultado['longitud']:.2f} km\nTiempo: {resultado['tiempo']:.4f}s")
+        ax.legend()
+        
+        if ruta_guardado: plt.savefig(ruta_guardado)
+        if mostrar: plt.show()
+        else: plt.close()
+
+    def animar_construccion(self, resultado, nombre_archivo='animacion_heuristica.gif'):
+        """Crea un GIF mostrando cómo se construye la ruta paso a paso"""
+        pasos = resultado['pasos']
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        def update(frame):
+            ax.clear()
+            tour_parcial = pasos[frame]
+            
+            # Puntos base
+            ax.scatter(self.coordenadas[:, 1], self.coordenadas[:, 0], c='gray', s=50, alpha=0.5)
+            
+            # Puntos visitados hasta el momento
+            visitados_idx = tour_parcial
+            coords_vis = self.coordenadas[visitados_idx]
+            ax.scatter(coords_vis[:, 1], coords_vis[:, 0], c='blue', s=100, zorder=5)
+            
+            # Etiquetas
+            for i in range(self.n):
+                color_txt = 'black' if i in visitados_idx else 'gray'
+                ax.annotate(self.ciudades[i], (self.coordenadas[i, 1], self.coordenadas[i, 0]), color=color_txt)
+            
+            # Líneas del tour parcial
+            if len(tour_parcial) > 1:
+                ax.plot(coords_vis[:, 1], coords_vis[:, 0], 'b-', linewidth=2)
+            
+            # Si es el último frame, cerramos el ciclo
+            if frame == len(pasos) - 1:
+                coords_finales = self.coordenadas[tour_parcial + [tour_parcial[0]]]
+                ax.plot(coords_finales[:, 1], coords_finales[:, 0], 'b--', linewidth=2)
+                titulo = f"Heurística completada: {resultado['longitud']:.2f} km"
+            else:
+                titulo = f"Paso {frame+1}: Visitando {self.ciudades[tour_parcial[-1]]}"
+            
+            ax.set_title(titulo)
+
+        # Añadimos un frame extra al final para pausa
+        frames_total = len(pasos)
+        ani = FuncAnimation(fig, update, frames=frames_total, interval=600, repeat_delay=2000)
+        ani.save(nombre_archivo, writer='pillow', fps=1.5)
+        print(f"Animación guardada como: {nombre_archivo}")
+        plt.close()
