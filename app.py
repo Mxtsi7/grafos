@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import time
 import numpy as np
 from algoritmo_vecino_cercano import TSPVecinoMasCercano
@@ -17,9 +16,7 @@ CIUDADES_BASE = {
 }
 
 def animar_recorrido(placeholder, solver, pasos, titulo_base, velocidad=0.1, es_exhaustivo=False):
-
     fig, ax = plt.subplots(figsize=(5, 4))
-    
     pad = 1.0
     ax.set_xlim(solver.coordenadas[:, 1].min()-pad, solver.coordenadas[:, 1].max()+pad)
     ax.set_ylim(solver.coordenadas[:, 0].min()-pad, solver.coordenadas[:, 0].max()+pad)
@@ -41,7 +38,7 @@ def animar_recorrido(placeholder, solver, pasos, titulo_base, velocidad=0.1, es_
             grosor = 2 if es_mejor else 1
         else:
             tour_actual = paso_data
-            longitud = solver._calcular_longitud_tour(tour_actual) 
+            longitud = solver._calcular_longitud_tour(tour_actual)
             titulo = f"{titulo_base}\nPaso {i+1}"
             color_linea = 'blue'
             grosor = 2
@@ -59,12 +56,12 @@ def animar_recorrido(placeholder, solver, pasos, titulo_base, velocidad=0.1, es_
                     coords_cierre = solver.coordenadas[[tour_actual[-1], tour_actual[0]]]
                     ax.plot(coords_cierre[:, 1], coords_cierre[:, 0], color=color_linea, linestyle='--', linewidth=grosor)
 
-
         for idx, txt in enumerate(solver.ciudades):
             ax.annotate(txt, (solver.coordenadas[idx, 1], solver.coordenadas[idx, 0]), fontsize=8)
 
         ax.set_title(titulo, fontsize=10)
         ax.axis('off')
+        
         placeholder.pyplot(fig)
         time.sleep(velocidad)
     
@@ -90,15 +87,18 @@ with st.sidebar:
 
 st.title("🚛 TSP Visualizer (Live)")
 
-c_mapa, c_matriz = st.columns([1.5, 1])
-with c_mapa:
-    df_map = pd.DataFrame([{'lat': v[0], 'lon': v[1]} for v in datos_activos.values()])
-    st.map(df_map, height=200, zoom=0)
+df_map = pd.DataFrame([{'lat': v[0], 'lon': v[1]} for v in datos_activos.values()])
+st.map(df_map, height=250, zoom=0)
 
-with c_matriz:
-    with st.expander("Ver Matriz"):
-        solver_temp = TSPVecinoMasCercano(datos_activos)
-        st.dataframe(pd.DataFrame(solver_temp.matriz_distancias))
+with st.expander("📏 Ver Matriz de Distancias", expanded=False):
+    solver_temp = TSPVecinoMasCercano(datos_activos)
+    nombres_ciudades = list(datos_activos.keys())
+    df_matriz = pd.DataFrame(
+        solver_temp.matriz_distancias, 
+        index=nombres_ciudades, 
+        columns=nombres_ciudades
+    )
+    st.dataframe(df_matriz, use_container_width=True)
 
 if 'res_nn' not in st.session_state:
     st.session_state.res_nn = None
@@ -109,13 +109,13 @@ if st.button("🚀 EJECUTAR", type="primary", use_container_width=True):
     with st.spinner("Calculando..."):
         solver_nn = TSPVecinoMasCercano(datos_activos)
         st.session_state.res_nn = solver_nn.resolver(ciudad_inicio=ciudad_inicio)
-        st.session_state.solver_nn_obj = solver_nn 
+        st.session_state.solver_nn_obj = solver_nn
 
         solver_ex = TSPExhaustivo(datos_activos)
         st.session_state.res_ex = solver_ex.resolver(guardar_proceso=True)
         st.session_state.solver_ex_obj = solver_ex
         
-        st.session_state.needs_animation = True 
+        st.session_state.needs_animation = True
         st.rerun()
 
 if st.session_state.res_nn:
@@ -131,8 +131,6 @@ if st.session_state.res_nn:
         c2.metric("Tiempo", f"{res_nn['tiempo']:.4f}s")
         
         plot_h = st.empty()
-        
-
         if not st.session_state.needs_animation or not animar:
              animar_recorrido(plot_h, st.session_state.solver_nn_obj, [res_nn['tour']], "Final", 0, False)
 
@@ -142,21 +140,19 @@ if st.session_state.res_nn:
         c1.metric("Distancia", f"{res_ex['longitud']:.2f}")
         c2.metric("Tiempo", f"{res_ex['tiempo']:.4f}s")
         
-        plot_e = st.empty() 
-        
+        plot_e = st.empty()
         if not st.session_state.needs_animation or not animar:
              animar_recorrido(plot_e, st.session_state.solver_ex_obj, [(res_ex['tour'], res_ex['longitud'], True)], "Final", 0, True)
 
     if st.session_state.needs_animation and animar:
-        
         with col_h:
             animar_recorrido(plot_h, st.session_state.solver_nn_obj, res_nn['pasos'], "Construyendo...", velocidad, False)
         
         with col_e:
             animar_recorrido(plot_e, st.session_state.solver_ex_obj, res_ex['tours_animacion'], "Buscando...", velocidad, True)
         
-        st.session_state.needs_animation = False 
-        st.rerun() 
+        st.session_state.needs_animation = False
+        st.rerun()
 
     st.divider()
     gap = ((res_nn['longitud'] - res_ex['longitud']) / res_ex['longitud']) * 100
