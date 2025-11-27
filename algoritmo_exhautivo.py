@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import math  # <--- IMPORTANTE: Importamos math estándar
+import math
 from itertools import permutations
 from math import radians, sin, cos, sqrt, atan2
 from matplotlib.animation import FuncAnimation
@@ -50,7 +50,6 @@ class TSPExhaustivo:
         tours_para_animacion = []
         mejor_hasta_ahora = []
 
-        # CORRECCIÓN AQUI: Usamos math.factorial en lugar de np.math.factorial
         frecuencia_guardado = max(1, int(math.factorial(self.n-1)/50))
 
         for perm in permutations(ciudades_restantes):
@@ -60,7 +59,6 @@ class TSPExhaustivo:
             
             if guardar_proceso:
                 todos_tours.append(tour.copy())
-                # Lógica corregida para guardar frames de animación
                 if longitud < mejor_longitud or iteraciones % frecuencia_guardado == 0:
                     tours_para_animacion.append((tour.copy(), longitud, longitud < mejor_longitud))
 
@@ -94,7 +92,7 @@ class TSPExhaustivo:
         coords_tour = self.coordenadas[tour_ext]
         ax.plot(coords_tour[:, 1], coords_tour[:, 0], 'g-', linewidth=2, label='Óptimo Global')
         
-        ax.set_title(f"Solución Exhaustiva: {resultado['longitud']:.2f} km")
+        ax.set_title(f"Exhaustiva: {resultado['longitud']:.2f} km")
         ax.legend()
         
         if ruta_guardado: plt.savefig(ruta_guardado)
@@ -105,7 +103,7 @@ class TSPExhaustivo:
         if not resultado.get('tours_animacion'): return
         datos = resultado['tours_animacion']
         
-        if len(datos) > 80: # Limitamos frames para que el GIF no pese tanto
+        if len(datos) > 80:
             indices = np.linspace(0, len(datos)-1, 80, dtype=int)
             datos = [datos[i] for i in indices]
             
@@ -133,5 +131,43 @@ class TSPExhaustivo:
             ax.set_title(f"Evaluando: {longitud:.2f} km" + (" (¡MEJOR!)" if es_mejor else ""))
 
         ani = FuncAnimation(fig, update, frames=len(datos), interval=150)
+        
+        # CORRECCIÓN: Se eliminó 'loop=1' para evitar el crash
+        ani.save(nombre_archivo, writer='pillow', fps=10)
+        plt.close()
+    def animar_busqueda(self, resultado, nombre_archivo='animacion_exhaustiva.gif'):
+        if not resultado.get('tours_animacion'): return
+        datos = resultado['tours_animacion']
+        
+        if len(datos) > 80:
+            indices = np.linspace(0, len(datos)-1, 80, dtype=int)
+            datos = [datos[i] for i in indices]
+            
+        if resultado['tour'] != datos[-1][0]:
+            datos.append((resultado['tour'], resultado['longitud'], True))
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        def update(frame):
+            ax.clear()
+            tour_actual, longitud, es_mejor = datos[frame]
+            
+            ax.scatter(self.coordenadas[:, 1], self.coordenadas[:, 0], c='black', s=50)
+            for i, txt in enumerate(self.ciudades):
+                ax.annotate(txt, (self.coordenadas[i, 1], self.coordenadas[i, 0]))
+            
+            tour_ext = tour_actual + [tour_actual[0]]
+            coords = self.coordenadas[tour_ext]
+            
+            color = 'green' if es_mejor else 'gray'
+            width = 3 if es_mejor else 1
+            alpha = 1.0 if es_mejor else 0.3
+            
+            ax.plot(coords[:, 1], coords[:, 0], color=color, linewidth=width, alpha=alpha)
+            ax.set_title(f"Evaluando: {longitud:.2f} km" + (" (¡MEJOR!)" if es_mejor else ""))
+
+        ani = FuncAnimation(fig, update, frames=len(datos), interval=150)
+        
+        # CORRECCIÓN: Se eliminó 'loop=1' para evitar el crash
         ani.save(nombre_archivo, writer='pillow', fps=10)
         plt.close()
