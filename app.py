@@ -3,23 +3,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 import numpy as np
+import pydeck as pdk  
 from algoritmo_vecino_cercano import TSPVecinoMasCercano
 from algoritmo_exhautivo import TSPExhaustivo
 
 st.set_page_config(page_title="TSP Lab", layout="wide", page_icon="🚛")
 
 CIUDADES_BASE = {
-    'Nairobi': (-1.2833, 36.8167), 'Osorno': (-40.5739, -73.1360),
-    'Rancagua': (-34.1667, -70.7333), 'Pamplona': (42.8167, -1.6500),
-    'Moscu': (55.7517, 37.6178), 'Orlando': (28.5383, -81.3792),
-    'San Jose': (37.3361, -121.8906)
+    'Nairobi': (-1.28333, 36.81667),   
+    'Osorno': (-40.57395, -73.13348),  
+    'Rancagua': (-34.17083, -70.74444),
+    'Pamplona': (42.81687, -1.64323),  
+    'Moscu': (55.75222, 37.61556),    
+    'Orlando': (28.53834, -81.37924),  
+    'San Jose': (37.33939, -121.89496) 
 }
+
 
 def animar_recorrido(placeholder, solver, pasos, titulo_base, velocidad=0.1, es_exhaustivo=False):
     fig, ax = plt.subplots(figsize=(5, 4))
     pad = 1.0
-    ax.set_xlim(solver.coordenadas[:, 1].min()-pad, solver.coordenadas[:, 1].max()+pad)
-    ax.set_ylim(solver.coordenadas[:, 0].min()-pad, solver.coordenadas[:, 0].max()+pad)
+    try:
+        ax.set_xlim(solver.coordenadas[:, 1].min()-pad, solver.coordenadas[:, 1].max()+pad)
+        ax.set_ylim(solver.coordenadas[:, 0].min()-pad, solver.coordenadas[:, 0].max()+pad)
+    except ValueError:
+        pass 
 
     if len(pasos) > 50:
         indices = np.linspace(0, len(pasos)-1, 50, dtype=int)
@@ -87,8 +95,39 @@ with st.sidebar:
 
 st.title("🚛 TSP Visualizer (Live)")
 
-df_map = pd.DataFrame([{'lat': v[0], 'lon': v[1]} for v in datos_activos.values()])
-st.map(df_map, height=250, zoom=0)
+df_pdk = pd.DataFrame([
+    {'lat': v[0], 'lon': v[1], 'name': k} 
+    for k, v in datos_activos.items()
+])
+
+st.pydeck_chart(pdk.Deck(
+    map_style=None,
+    initial_view_state=pdk.ViewState(
+        latitude=20,
+        longitude=0,
+        zoom=1,
+        pitch=0,
+    ),
+    layers=[
+        pdk.Layer(
+            'ScatterplotLayer',
+            data=df_pdk,
+            get_position='[lon, lat]',
+            get_color='[255, 75, 75, 200]', 
+            get_radius=500000, 
+            pickable=True,
+        ),
+        pdk.Layer(
+            "TextLayer",
+            data=df_pdk,
+            get_position='[lon, lat]',
+            get_text="name",
+            get_color=[0, 0, 0, 255],
+            get_size=20,
+            get_alignment_baseline="'bottom'",
+        ),
+    ],
+))
 
 with st.expander("📏 Ver Matriz de Distancias", expanded=False):
     solver_temp = TSPVecinoMasCercano(datos_activos)
