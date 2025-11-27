@@ -42,33 +42,25 @@ class TSPVecinoMasCercano:
             except ValueError:
                 print("Ciudad no encontrada.")
                 return None
-
         tiempo_inicio = time.time()
         tour = [ciudad_inicio]
         no_visitadas = set(range(self.n))
         no_visitadas.remove(ciudad_inicio)
-        
-        pasos_animacion = [tour.copy()] # Guardamos estado inicial
-
+        pasos_animacion = [tour.copy()] 
         ciudad_actual = ciudad_inicio
-        
         while no_visitadas:
-            # Lógica Greedy
             candidato = min(no_visitadas, key=lambda c: self.matriz_distancias[ciudad_actual][c])
-            
             tour.append(candidato)
             no_visitadas.remove(candidato)
             ciudad_actual = candidato
-            
-            pasos_animacion.append(tour.copy()) # Guardamos paso intermedio
-
+            pasos_animacion.append(tour.copy()) 
         tiempo_fin = time.time()
         
         return {
             'tour': tour,
             'longitud': self._calcular_longitud_tour(tour),
             'tiempo': tiempo_fin - tiempo_inicio,
-            'pasos': pasos_animacion, # Clave para la animación
+            'pasos': pasos_animacion, 
             'ciudad_inicio': ciudad_inicio
         }
 
