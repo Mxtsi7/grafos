@@ -2,7 +2,6 @@ import numpy as np
 import time
 from math import radians, sin, cos, sqrt, atan2
 
-# Define la clase para resolver el TSP con el algoritmo del vecino más cercano
 class TSPVecinoMasCercano:
     def __init__(self, datos_ciudades):
         # Asigna la lista de nombres de las ciudades
